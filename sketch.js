@@ -1,12 +1,14 @@
+
 let myShader;
-let fogSlider; // Slider para controlar la cantidad de niebla
-let Fs; // Textura para el shader
-let fogColor = [0.8, 0.9, 1, 1]; // Color de niebla (RGBA)
-let fogAmount = 0.5; // Cantidad inicial de niebla (0.0 a 1.0)
+let fogNear = 0.700;
+let fogFar = 0.900;
+let fogColor = [0.8, 0.9, 1, 1];
+let fogSliderNear, fogSliderFar;
+let textureImage;
+let robotoFont;
 
 function preload() {
-  // Carga una imagen para usar como textura
-  Fs = loadImage("img/f-texture.png");
+  textureImage = loadImage("img/f-texture.png");
   robotoFont = loadFont('font/Roboto-Italic-VariableFont_wdth,wght.ttf');
   myShader  = loadShader('fogShader.vert', 'fogShader.frag');
 }
@@ -15,43 +17,58 @@ function setup() {
   createCanvas(600, 600, WEBGL);
   textFont(robotoFont);
   noStroke();
-  // Crear el objeto p5.Shader
-  //myShader = createShader(vertSrc, fragSrc);
 
-  // Crear el slider para controlar u_fogAmount
-  fogSlider = createSlider(0, 1, fogAmount, 0.01); // Mínimo 0, máximo 1, paso de 0.01
-  fogSlider.position(345, 10); // Posición del slider
-  fogSlider.style('width', '200px'); // Ancho del slider
+
+  fogSliderNear = createSlider(0,1, fogNear, 0.001);
+  fogSliderNear.position(345, 10);
+  fogSliderNear.style('width', '200px');
+
+  fogSliderFar = createSlider(0, 1, fogFar, 0.001);
+  fogSliderFar.position(345, 40);
+  fogSliderFar.style('width', '200px');
+
 }
 
 function draw() {
   background(204, 229, 255);
-
-  // Leer el valor del slider para ajustar fogAmount
-  fogAmount = fogSlider.value();
-
-  // Usa el shader personalizado
+  fogNear = fogSliderNear.value();
+  fogFar = fogSliderFar.value();
   shader(myShader);
 
-  // Configurar las variables uniformes
-  myShader.setUniform('u_texture', Fs); // Textura
-  myShader.setUniform('u_fogColor', fogColor); // Color de niebla
-  myShader.setUniform('u_fogAmount', fogAmount); // Cantidad de niebla
+  let n = 40;
+  for (let i = 0; i <= n; ++i) {
+    push()
+    camera(0.2, 0, 1);
+    translate(
+      map(i, 0, n-1, -180, 750),
+      0,
+      i * -100
+    );
 
-  push();
-  fill(200);
-  translate(0, 0, 0);
-  rotateX(frameCount * 0.01);
-  rotateY(frameCount * 0.01);
-  box(width / 4);
-  pop();
+    rotateWithFrameCount();
+    myShader.setUniform('u_texture', textureImage);
+    myShader.setUniform('u_fogColor', fogColor);
+    myShader.setUniform('u_fogNear', fogNear);
+    myShader.setUniform('u_fogFar', fogFar);
+    box(50);
+    pop();
+  }
 
+  resetShader();
   push();
   textAlign(CENTER, CENTER);
   textSize(16);
   fill(0);
-  text('fogAmount: ',0, -285);
-  text( fogAmount, 270, -285);
+  text('fogNear: ',0, -285);
+  text( fogNear, 270, -285);
+  text('fogFar: ',0, -250);
+  text( fogFar, 270, -250);
   pop()
 
+}
+
+function rotateWithFrameCount() {
+  let t = millis() * 0.001;
+  rotateX(0.4 * t);
+  rotateY(-0.7 * t);
 }
